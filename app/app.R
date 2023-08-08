@@ -1,8 +1,14 @@
 library(shiny)
+library(shinythemes)
 library(dygraphs)
 library(data.table)
 
-ui <- fluidPage(
+
+# Good theme options: "lumem", "spacelab", "cerulean"...
+# There's an shiny app dedicated to test theme options,
+# https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
+
+ui <- fluidPage(theme = shinytheme("lumen"),
   titlePanel("Interface"),
   sidebarLayout(
     sidebarPanel(

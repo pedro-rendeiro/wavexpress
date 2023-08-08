@@ -33,7 +33,7 @@ server <- function(input, output) {
     file_data <- fread(input$file_1$datapath, sep = "\t")
     
     # Lendo o arquivo texto na forma de uma tabela
-    df_1.1 <- read.table(input$file_1$datapath, sep = "\t", header = FALSE, dec = ",")
+    df_1.1 <- read.delim2(input$file_1$datapath)
     
     df_1.2 <- data.frame(time=df_1.1[,1], df_1.1[,2]) #criação de um dataframe para armazenamento dos dados
     

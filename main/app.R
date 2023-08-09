@@ -9,7 +9,7 @@ library(DT)
 # https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
 
 ui <- fluidPage(theme = shinytheme("lumen"),
-  titlePanel("Interface"),
+  titlePanel("Wavexpress"),
   sidebarLayout(
     sidebarPanel(
       fileInput("file_1", "Choose a txt file:",

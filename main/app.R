@@ -2,6 +2,7 @@ library(shiny)
 library(shinythemes)
 library(dygraphs)
 library(data.table)
+library(DT)
 
 # Good theme options: "lumem", "spacelab", "cerulean"...
 # There's an shiny app dedicated to test theme options,
@@ -29,18 +30,22 @@ server <- function(input, output) {
   output$dygraph_plot_1 <- renderDygraph({
     req(input$file_1)
     
-    # Read the data from the uploaded file
-    file_data <- fread(input$file_1$datapath, sep = "\t")
+    # Read file as tab separated values
+    values <- read.delim2(input$file_1$datapath)  # WITH headers
+    # df_1.1 <- read.delim2(input$file_1$datapath, header = FALSE)  # NO headers
     
-    # Read file as tab separated values WITH headers
-    df_1.1 <- read.delim2(input$file_1$datapath)
-    # Read file as tab separated values WITHOUT headers
-    # df_1.1 <- read.delim2(input$file_1$datapath, header = FALSE)
+    headers = colnames(read.delim2(input$file_1$datapath))
     
-    df_1.2 <- data.frame(time=df_1.1[,1], df_1.1[,2]) #criação de um dataframe para armazenamento dos dados
+    cat(values[1,1])
+    cat("\n")
+    
+    cat(headers)
+    cat("\n")
+    
+    values_df <- data.frame(time=values[,1], values[,2]) #criação de um dataframe para armazenamento dos dados
     
     #https://www.rdocumentation.org/packages/dygraphs/versions/1.1.1.6/topics/dyAxis
-    dygraph(df_1.2,main = "EMG Signal") %>% dyRangeSelector() %>%
+    dygraph(values_df,main = "EMG Signal") %>% dyRangeSelector() %>%
       dyAxis("x", label = "Time (s)")%>%
       dyAxis("y", label = "Amplitude")
   })

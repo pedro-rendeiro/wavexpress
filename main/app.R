@@ -9,6 +9,8 @@ library(tidyverse)
 # There's an shiny app dedicated to test theme options,
 # https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
 
+df <- dplyr::tibble(Height = "185", Weight = "95")
+
 ui <- fluidPage(theme = shinytheme("lumen"),
   titlePanel("Wavexpress"),
   sidebarLayout(
@@ -32,7 +34,6 @@ server <- function(input, output) {
     
     # Read file as tab separated values
     data <- read.delim2(input$file_1$datapath)  # WITH headers
-    # data <- read.delim2(input$file_1$datapath, header = FALSE)  # NO headers
     
     headers <- colnames(read.delim2(input$file_1$datapath))
     
@@ -48,42 +49,47 @@ server <- function(input, output) {
   # The proxy to update the DT
   proxy <- dataTableProxy('myTable')
   
-  # checkboxes <- data.frame(
-  #   var1 = c(""),
-  #   var2 = c(""),
-  #   row.names = c("filename")
-  # )  
-  
-  # The initial data for the checkboxes
-  checkboxes <- data.frame(
-    AF_FLEX = c(NA),
-    AF_EXT = c(as.character(icon("ok", lib = "glyphicon"))),
-    row.names = c("S1_AF.txt")
-  )
-  
-  
-  # The reactive version of the data
-  tableData <- reactiveValues(checkboxes = checkboxes)
-  
-  
-  # Update the table when clicked
-  observeEvent(req(input$myTable_cells_selected), {
-    if(input$myTable_cells_selected[2]) {
-      tableData$checkboxes[input$myTable_cells_selected] =
-        ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
-               as.character(icon("ok", lib = "glyphicon")), NA)
-  
-      # Send proxy (no need to refresh whole table)
-      replaceData(proxy, tableData$checkboxes)
-    }
-  })
-  
-  
   # The "checkbox" table
   output$myTable <- renderDataTable({
+    req(input$file_1)
+    
+    # Get file name and headers
+    filename <- input$file_1$name
+    headers <- colnames(read.delim2(input$file_1$datapath))[-1]
+    
+    # Create an empty dataframe with the specified column names and a single row of NA values
+    checkboxes <- data.frame(matrix(NA, ncol = length(headers), nrow = 1))
+
+    # Set the column names
+    colnames(checkboxes) <- headers
+    
+    # Create a single row of NA values with the same length as the number of columns
+    row_data <- rep(NA, length(headers))
+    
+    # Assign the row data to the single row in the dataframe
+    checkboxes[1, ] <- row_data
+    
+    # Set the row name
+    rownames(checkboxes) <- filename
+    
+    
+    # The reactive version of the data
+    tableData <- reactiveValues(checkboxes = checkboxes)
+    
+    # Update the table when clicked
+    observeEvent(req(input$myTable_cells_selected), {
+      req(input$file_1)
+      if(input$myTable_cells_selected[2]) {
+        tableData$checkboxes[input$myTable_cells_selected] =
+          ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
+                 as.character(icon("ok", lib = "glyphicon")), NA)
+        
+        # Send proxy (no need to refresh whole table)
+        replaceData(proxy, tableData$checkboxes)
+      }
+    })
     
     checkboxes
-    
   }, 
   # These are options to make the table look like checkboxes
   selection = list(mode = "single", target = 'cell'), 

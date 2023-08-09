@@ -3,6 +3,7 @@ library(shinythemes)
 library(dygraphs)
 library(data.table)
 library(DT)
+library(tidyverse)
 
 # Good theme options: "lumem", "spacelab", "cerulean"...
 # There's an shiny app dedicated to test theme options,
@@ -24,28 +25,21 @@ ui <- fluidPage(theme = shinytheme("lumen"),
 )
 
 server <- function(input, output) {
-
   # READ AND DISPLAY FILE
   # Read the input file and render the dygraph plot
   output$dygraph_plot_1 <- renderDygraph({
     req(input$file_1)
     
     # Read file as tab separated values
-    values <- read.delim2(input$file_1$datapath)  # WITH headers
-    # df_1.1 <- read.delim2(input$file_1$datapath, header = FALSE)  # NO headers
+    data <- read.delim2(input$file_1$datapath)  # WITH headers
+    # data <- read.delim2(input$file_1$datapath, header = FALSE)  # NO headers
     
-    headers = colnames(read.delim2(input$file_1$datapath))
+    headers <- colnames(read.delim2(input$file_1$datapath))
     
-    cat(values[1,1])
-    cat("\n")
-    
-    cat(headers)
-    cat("\n")
-    
-    values_df <- data.frame(time=values[,1], values[,2]) #criação de um dataframe para armazenamento dos dados
+    values_df <- data.frame(time=data[,1], data[,2]) # criação de um dataframe para armazenamento dos dados
     
     #https://www.rdocumentation.org/packages/dygraphs/versions/1.1.1.6/topics/dyAxis
-    dygraph(values_df,main = "EMG Signal") %>% dyRangeSelector() %>%
+    dygraph(values_df, main = "EMG Signal") %>% dyRangeSelector() %>%
       dyAxis("x", label = "Time (s)")%>%
       dyAxis("y", label = "Amplitude")
   })
@@ -54,16 +48,23 @@ server <- function(input, output) {
   # The proxy to update the DT
   proxy <- dataTableProxy('myTable')
   
+  # checkboxes <- data.frame(
+  #   var1 = c(""),
+  #   var2 = c(""),
+  #   row.names = c("filename")
+  # )  
+  
   # The initial data for the checkboxes
   checkboxes <- data.frame(
-    Name = c(NA, as.character(icon("ok", lib = "glyphicon"))),
-    Time = c(NA, as.character(icon("ok", lib = "glyphicon"))),
-    Budget = c(as.character(icon("ok", lib = "glyphicon")), NA),
-    row.names = paste("Project", 1:2)
+    AF_FLEX = c(NA),
+    AF_EXT = c(as.character(icon("ok", lib = "glyphicon"))),
+    row.names = c("S1_AF.txt")
   )
+  
   
   # The reactive version of the data
   tableData <- reactiveValues(checkboxes = checkboxes)
+  
   
   # Update the table when clicked
   observeEvent(req(input$myTable_cells_selected), {
@@ -76,6 +77,7 @@ server <- function(input, output) {
       replaceData(proxy, tableData$checkboxes)
     }
   })
+  
   
   # The "checkbox" table
   output$myTable <- renderDataTable({

@@ -14,7 +14,7 @@ ui <- fluidPage(
                                  "Percent Black" = 2,
                                  "Percent Hispanic" = 3, 
                                  "Percent Asian" = 4),
-                            selected = 1),
+                  selected = 1),
       
       sliderInput("slider1", "Range of interest:",
                   min = 0, max = 100, value = c(0, 100)),

@@ -50,7 +50,7 @@ server <- function(input, output) {
   proxy <- dataTableProxy('myTable')
   
   # The initial data for the checkboxes
-  checkboxes = data.frame(
+  checkboxes <- data.frame(
     Name = c(NA, as.character(icon("ok", lib = "glyphicon"))),
     Time = c(NA, as.character(icon("ok", lib = "glyphicon"))),
     Budget = c(as.character(icon("ok", lib = "glyphicon")), NA),
@@ -58,21 +58,22 @@ server <- function(input, output) {
   )
   
   # The reactive version of the data
-  tableData = reactiveValues(checkboxes = checkboxes)
+  tableData <- reactiveValues(checkboxes = checkboxes)
   
   # Update the table when clicked
   observeEvent(req(input$myTable_cells_selected), {
-    tableData$checkboxes[input$myTable_cells_selected] =
-      ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
-             as.character(icon("ok", lib = "glyphicon")), NA)
-    
-    # Send proxy (no need to refresh whole table)
-    replaceData(proxy, tableData$checkboxes)
-    
+    if(input$myTable_cells_selected[2]) {
+      tableData$checkboxes[input$myTable_cells_selected] =
+        ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
+               as.character(icon("ok", lib = "glyphicon")), NA)
+  
+      # Send proxy (no need to refresh whole table)
+      replaceData(proxy, tableData$checkboxes)
+    }
   })
   
   # The "checkbox" table
-  output$myTable = renderDataTable({
+  output$myTable <- renderDataTable({
     
     checkboxes
     

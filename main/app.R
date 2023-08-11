@@ -41,10 +41,24 @@ server <- function(input, output) {
     data <- read.delim2(input$file_1$datapath)  # Skip headers
     
     # Extract the headers (variable names)
-    headers <- colnames(read.delim2(input$file_1$datapath))[-1]
+    col_names <- colnames(read.delim2(input$file_1$datapath))
+    
+    headers <- col_names[-1]
+    
+    # Limit length acording to number of attributes of the input file
+    length(v.marked) <<- length(headers)
+    
+    # Debugging
+    cat("v.marked:", v.marked, "\n")
+    
+    # Consider "Time" (always True) as the 1st element
+    new_v.marked <- c(TRUE, v.marked)
+
+    # Get indices
+    cols_to_plot <- which(new_v.marked)
     
     # Plots the graph
-    dygraph(dplyr::select(data, everything()), main = "EMG Signal") %>% dyRangeSelector() %>%
+    dygraph(dplyr::select(data, all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
       dyAxis("x", label = "Time (s)")%>%
       dyAxis("y", label = "Amplitude (mV)")
   })
@@ -81,14 +95,16 @@ server <- function(input, output) {
     observeEvent(req(input$myTable_cells_selected), {
       req(input$file_1)
       
-      # Global vector to store marked cells (initiated as True for all elements)
-      length(v.marked) <<- length(headers)
+      
       
       # Varible to store selected cells
       cell <- input$myTable_cells_selected[2]
       
       # Invert logic value of the selected cell
-      v.marked[cell] <<- !v.marked[cell]  
+      v.marked[cell] <<- !v.marked[cell]
+      
+      # Debugging
+      print(v.marked)
       
       # If one of the cells has been selected
       if(cell) {

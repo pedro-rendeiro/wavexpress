@@ -36,27 +36,28 @@ server <- function(input, output) {
   output$dygraph_plot_1 <- renderDygraph({
     # Silently leave the function in case there's no input file
     req(input$file_1)
-    
+
     # Read file as tab separated values
     data <- read.delim2(input$file_1$datapath)  # Skip headers
-    
+
     # Extract the headers (variable names)
     col_names <- colnames(read.delim2(input$file_1$datapath))
-    
+
     headers <- col_names[-1]
-    
+
     # Limit length acording to number of attributes of the input file
     length(v.marked) <<- length(headers)
-    
+
     # Debugging
     cat("v.marked:", v.marked, "\n")
-    
+
     # Consider "Time" (always True) as the 1st element
     new_v.marked <- c(TRUE, v.marked)
 
     # Get indices
     cols_to_plot <- which(new_v.marked)
-    
+    print(cols_to_plot)
+
     # Plots the graph
     dygraph(dplyr::select(data, all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
       dyAxis("x", label = "Time (s)")%>%
@@ -70,7 +71,6 @@ server <- function(input, output) {
   output$myTable <- renderDataTable({
     # Silently leave the function in case there's no input file
     req(input$file_1)
-    
     
     # Get file name and headers
     filename <- input$file_1$name
@@ -95,8 +95,6 @@ server <- function(input, output) {
     observeEvent(req(input$myTable_cells_selected), {
       req(input$file_1)
       
-      
-      
       # Varible to store selected cells
       cell <- input$myTable_cells_selected[2]
       
@@ -115,6 +113,38 @@ server <- function(input, output) {
         # Send proxy (no need to refresh whole table)
         replaceData(proxy, tableData$checkboxes)
       }
+      
+      output$dygraph_plot_1 <- renderDygraph({
+        # Silently leave the function in case there's no input file
+        req(input$file_1)
+        
+        # Read file as tab separated values
+        data <- read.delim2(input$file_1$datapath)  # Skip headers
+        
+        # Extract the headers (variable names)
+        col_names <- colnames(read.delim2(input$file_1$datapath))
+        
+        headers <- col_names[-1]
+        
+        # Limit length acording to number of attributes of the input file
+        length(v.marked) <<- length(headers)
+        
+        # Debugging
+        cat("v.marked:", v.marked, "\n")
+        
+        # Consider "Time" (always True) as the 1st element
+        new_v.marked <- c(TRUE, v.marked)
+        
+        # Get indices
+        cols_to_plot <- which(new_v.marked)
+        print(cols_to_plot)
+        
+        # Plots the graph
+        dygraph(dplyr::select(data, all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
+          dyAxis("x", label = "Time (s)")%>%
+          dyAxis("y", label = "Amplitude (mV)")
+      })
+      
     })
   
     # Finally calls the object

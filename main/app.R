@@ -9,69 +9,70 @@ library(tidyverse)
 # There's an shiny app dedicated to test theme options,
 # https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
 
-df <- dplyr::tibble(Height = "185", Weight = "95")
+checkboxes <- data.frame()
 
+# Front-end
 ui <- fluidPage(theme = shinytheme("lumen"),
   titlePanel("Wavexpress"),
   sidebarLayout(
     sidebarPanel(
+      # Display "Browse" button
       fileInput("file_1", "Choose a txt file:",
                 accept = c(".txt")
       ),
+      # Display table with checkboxes
       dataTableOutput("myTable")
     ),
     mainPanel(
+      # Graph window
       dygraphOutput("dygraph_plot_1")
     )
   )
 )
 
-server <- function(input, output) {
-  # READ AND DISPLAY FILE
-  # Read the input file and render the dygraph plot
+server <- function(input, output, checkboxes) {
+  # Sends the graph object to the output
   output$dygraph_plot_1 <- renderDygraph({
+    # Silently leave the function in case there's no input file
     req(input$file_1)
     
     # Read file as tab separated values
-    data <- read.delim2(input$file_1$datapath)  # WITH headers
+    data <- read.delim2(input$file_1$datapath)  # Skip headers
     
-    headers <- colnames(read.delim2(input$file_1$datapath))
+    # Extract the headers (variable names)
+    headers <- colnames(read.delim2(input$file_1$datapath))[-1]
     
-    values_df <- data.frame(time=data[,1], data[,2]) # criação de um dataframe para armazenamento dos dados
+    # Print the result (including any errors caught)
+    print(result)
     
-    #https://www.rdocumentation.org/packages/dygraphs/versions/1.1.1.6/topics/dyAxis
-    dygraph(values_df, main = "EMG Signal") %>% dyRangeSelector() %>%
+    
+    # Plots the graph
+    dygraph(dplyr::select(data, everything()), main = "EMG Signal") %>% dyRangeSelector() %>%
       dyAxis("x", label = "Time (s)")%>%
-      dyAxis("y", label = "Amplitude")
+      dyAxis("y", label = "Amplitude (mV)")
   })
   
-  # READ FROM MATRIX CHECKBOX AND UPDATE TABLE
-  # The proxy to update the DT
+  # Proxy to update the myTable
   proxy <- dataTableProxy('myTable')
   
-  # The "checkbox" table
+  # Sends the "checkbox" table to the output
   output$myTable <- renderDataTable({
+    # Silently leave the function in case there's no input file
     req(input$file_1)
     
     # Get file name and headers
     filename <- input$file_1$name
     headers <- colnames(read.delim2(input$file_1$datapath))[-1]
     
-    # Create an empty dataframe with the specified column names and a single row of NA values
-    checkboxes <- data.frame(matrix(NA, ncol = length(headers), nrow = 1))
-
+    # Create an empty dataframe with the specified column names and a single row of "OK" values
+    checkboxes <- data.frame(matrix(as.character(icon("ok", lib = "glyphicon")), 
+                                    ncol = length(headers), nrow = 1))
+    
     # Set the column names
     colnames(checkboxes) <- headers
     
-    # Create a single row of NA values with the same length as the number of columns
-    row_data <- rep(NA, length(headers))
-    
-    # Assign the row data to the single row in the dataframe
-    checkboxes[1, ] <- row_data
-    
     # Set the row name
     rownames(checkboxes) <- filename
-    
     
     # The reactive version of the data
     tableData <- reactiveValues(checkboxes = checkboxes)
@@ -89,16 +90,19 @@ server <- function(input, output) {
       }
     })
     
+    # finally calls the object
     checkboxes
-  }, 
-  # These are options to make the table look like checkboxes
-  selection = list(mode = "single", target = 'cell'), 
-  options = list(
-    columnDefs = list(list(className = 'dt-center', targets = "_all")),
-    dom = "t", ordering = F
-  ),
-  escape = F)
-  
+    
+    },
+    
+    # These are options to make the table look like checkboxes
+    selection = list(mode = "single", target = 'cell'), 
+    options = list(
+      columnDefs = list(list(className = 'dt-center', targets = "_all")),
+      dom = "t", ordering = F
+    ),
+    escape = F
+  )
 }
 
 shinyApp(ui, server)

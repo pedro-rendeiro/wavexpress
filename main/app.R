@@ -5,11 +5,12 @@ library(data.table)
 library(DT)
 library(tidyverse)
 
+# Load shared data and function from global.R
+source("global.R")
+
 # Good theme options: "lumem", "spacelab", "cerulean"...
 # There's an shiny app dedicated to test theme options,
 # https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
-
-checkboxes <- data.frame()
 
 # Front-end
 ui <- fluidPage(theme = shinytheme("lumen"),
@@ -30,7 +31,7 @@ ui <- fluidPage(theme = shinytheme("lumen"),
   )
 )
 
-server <- function(input, output, checkboxes) {
+server <- function(input, output) {
   # Sends the graph object to the output
   output$dygraph_plot_1 <- renderDygraph({
     # Silently leave the function in case there's no input file
@@ -41,10 +42,6 @@ server <- function(input, output, checkboxes) {
     
     # Extract the headers (variable names)
     headers <- colnames(read.delim2(input$file_1$datapath))[-1]
-    
-    # Print the result (including any errors caught)
-    print(result)
-    
     
     # Plots the graph
     dygraph(dplyr::select(data, everything()), main = "EMG Signal") %>% dyRangeSelector() %>%
@@ -59,6 +56,7 @@ server <- function(input, output, checkboxes) {
   output$myTable <- renderDataTable({
     # Silently leave the function in case there's no input file
     req(input$file_1)
+    
     
     # Get file name and headers
     filename <- input$file_1$name
@@ -78,9 +76,22 @@ server <- function(input, output, checkboxes) {
     tableData <- reactiveValues(checkboxes = checkboxes)
     
     # Update the table when clicked
+    # (selected = clicked)
+    # (marked = "OK" sign)
     observeEvent(req(input$myTable_cells_selected), {
       req(input$file_1)
-      if(input$myTable_cells_selected[2]) {
+      
+      # Global vector to store marked cells (initiated as True for all elements)
+      length(v.marked) <<- length(headers)
+      
+      # Varible to store selected cells
+      cell <- input$myTable_cells_selected[2]
+      
+      # Invert logic value of the selected cell
+      v.marked[cell] <<- !v.marked[cell]  
+      
+      # If one of the cells has been selected
+      if(cell) {
         tableData$checkboxes[input$myTable_cells_selected] =
           ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
                  as.character(icon("ok", lib = "glyphicon")), NA)
@@ -89,8 +100,8 @@ server <- function(input, output, checkboxes) {
         replaceData(proxy, tableData$checkboxes)
       }
     })
-    
-    # finally calls the object
+  
+    # Finally calls the object
     checkboxes
     
     },

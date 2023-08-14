@@ -32,63 +32,55 @@ ui <- fluidPage(theme = shinytheme("lumen"),
 )
 
 server <- function(input, output) {
+  # Proxy to update the myTable
+  proxy <- dataTableProxy('myTable')
   
-  # Reads the input file
-  data <- reactive({
+  # Combined reactive expression for file input, data, headers, and filename
+  file_data <- reactive({
     req(input$file_1)
-    read.delim2(input$file_1$datapath)  # Skip headers
+    data <- read.delim2(input$file_1$datapath)
+    headers <- colnames(data)[-1]
+    filename <- input$file_1$name
+    list(data = data, headers = headers, filename = filename)
   })
   
-  # Extract the headers (variable names)
-  headers <- reactive({
-    colnames(read.delim2(input$file_1$datapath))[-1]
-  })
-  
-  # Sends the graph object to the output
+  # Render function
   output$dygraph_plot_1 <- renderDygraph({
     # Silently leave the function in case there's no input file
-    req(input$file_1)
-
-    # Limit length acording to number of attributes of the input file
-    length(v.marked) <<- length(headers())
-
-    # Debugging
-    cat("v.marked:", v.marked, "\n")
-
+    req(file_data()$data)
+    
+    # Limit length according to the number of attributes of the input file
+    length(v.marked) <<- length(file_data()$headers)
+    
     # Consider "Time" (always True) as the 1st element
     new_v.marked <- c(TRUE, v.marked)
-
+    
     # Get indices
     cols_to_plot <- which(new_v.marked)
     print(cols_to_plot)
-
+    
     # Plots the graph
-    dygraph(dplyr::select(data(), all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
-      dyAxis("x", label = "Time (s)")%>%
+    dygraph(dplyr::select(file_data()$data, all_of(cols_to_plot)), main = file_data()$filename) %>% 
+      dyRangeSelector() %>%
+      dyAxis("x", label = "Time (s)") %>%
       dyAxis("y", label = "Amplitude (mV)")
   })
   
-  # Proxy to update the myTable
-  proxy <- dataTableProxy('myTable')
   
   # Sends the "checkbox" table to the output
   output$myTable <- renderDataTable({
     # Silently leave the function in case there's no input file
     req(input$file_1)
     
-    # Get file name and headers
-    filename <- input$file_1$name
-    headers <- colnames(read.delim2(input$file_1$datapath))[-1]
-    
     # Create an empty dataframe with the specified column names and a single row of "OK" values
     checkboxes <- data.frame(matrix(as.character(icon("ok", lib = "glyphicon")), 
-                                    ncol = length(headers), nrow = 1))
+                                    ncol = length(file_data()$headers), nrow = 1))
     
     # Set the column names
-    colnames(checkboxes) <- headers
-    
+    colnames(checkboxes) <- file_data()$headers
+
     # Set the row name
-    rownames(checkboxes) <- filename
+    rownames(checkboxes) <- file_data()$filename
     
     # The reactive version of the data
     tableData <- reactiveValues(checkboxes = checkboxes)
@@ -123,7 +115,7 @@ server <- function(input, output) {
         req(input$file_1)
         
         # Limit length acording to number of attributes of the input file
-        length(v.marked) <<- length(headers())
+        length(v.marked) <<- length(file_data()$headers)
         
         # Debugging
         cat("v.marked:", v.marked, "\n")
@@ -136,7 +128,7 @@ server <- function(input, output) {
         print(cols_to_plot)
         
         # Plots the graph
-        dygraph(dplyr::select(data(), all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
+        dygraph(dplyr::select(file_data()$data, all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
           dyAxis("x", label = "Time (s)")%>%
           dyAxis("y", label = "Amplitude (mV)")
       })
@@ -144,9 +136,7 @@ server <- function(input, output) {
     })
   
     # Finally calls the object
-    checkboxes
-    
-    },
+    checkboxes},
     
     # These are options to make the table look like checkboxes
     selection = list(mode = "single", target = 'cell'), 

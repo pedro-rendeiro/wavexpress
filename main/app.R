@@ -32,21 +32,25 @@ ui <- fluidPage(theme = shinytheme("lumen"),
 )
 
 server <- function(input, output) {
+  
+  # Reads the input file
+  data <- reactive({
+    req(input$file_1)
+    read.delim2(input$file_1$datapath)  # Skip headers
+  })
+  
+  # Extract the headers (variable names)
+  headers <- reactive({
+    colnames(read.delim2(input$file_1$datapath))[-1]
+  })
+  
   # Sends the graph object to the output
   output$dygraph_plot_1 <- renderDygraph({
     # Silently leave the function in case there's no input file
     req(input$file_1)
 
-    # Read file as tab separated values
-    data <- read.delim2(input$file_1$datapath)  # Skip headers
-
-    # Extract the headers (variable names)
-    col_names <- colnames(read.delim2(input$file_1$datapath))
-
-    headers <- col_names[-1]
-
     # Limit length acording to number of attributes of the input file
-    length(v.marked) <<- length(headers)
+    length(v.marked) <<- length(headers())
 
     # Debugging
     cat("v.marked:", v.marked, "\n")
@@ -59,7 +63,7 @@ server <- function(input, output) {
     print(cols_to_plot)
 
     # Plots the graph
-    dygraph(dplyr::select(data, all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
+    dygraph(dplyr::select(data(), all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
       dyAxis("x", label = "Time (s)")%>%
       dyAxis("y", label = "Amplitude (mV)")
   })
@@ -118,16 +122,8 @@ server <- function(input, output) {
         # Silently leave the function in case there's no input file
         req(input$file_1)
         
-        # Read file as tab separated values
-        data <- read.delim2(input$file_1$datapath)  # Skip headers
-        
-        # Extract the headers (variable names)
-        col_names <- colnames(read.delim2(input$file_1$datapath))
-        
-        headers <- col_names[-1]
-        
         # Limit length acording to number of attributes of the input file
-        length(v.marked) <<- length(headers)
+        length(v.marked) <<- length(headers())
         
         # Debugging
         cat("v.marked:", v.marked, "\n")
@@ -140,7 +136,7 @@ server <- function(input, output) {
         print(cols_to_plot)
         
         # Plots the graph
-        dygraph(dplyr::select(data, all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
+        dygraph(dplyr::select(data(), all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
           dyAxis("x", label = "Time (s)")%>%
           dyAxis("y", label = "Amplitude (mV)")
       })

@@ -60,7 +60,8 @@ server <- function(input, output) {
     print(cols_to_plot)
     
     # Plots the graph
-    dygraph(dplyr::select(file_data()$data, all_of(cols_to_plot)), main = file_data()$filename) %>% 
+    dygraph(dplyr::select(file_data()$data, all_of(cols_to_plot)), 
+            main = file_data()$filename) %>% 
       dyRangeSelector() %>%
       dyAxis("x", label = "Time (s)") %>%
       dyAxis("y", label = "Amplitude (mV)")
@@ -128,8 +129,10 @@ server <- function(input, output) {
         print(cols_to_plot)
         
         # Plots the graph
-        dygraph(dplyr::select(file_data()$data, all_of(cols_to_plot)), main = "EMG Signal") %>% dyRangeSelector() %>%
-          dyAxis("x", label = "Time (s)")%>%
+        dygraph(dplyr::select(file_data()$data, all_of(cols_to_plot)), 
+                main = file_data()$filename) %>% 
+          dyRangeSelector() %>%
+          dyAxis("x", label = "Time (s)") %>%
           dyAxis("y", label = "Amplitude (mV)")
       })
       

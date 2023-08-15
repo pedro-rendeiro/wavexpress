@@ -27,7 +27,7 @@ ui <- fluidPage(theme = shinytheme("lumen"),
     ),
     mainPanel(
       # Graph window
-      dygraphOutput("dygraph_plot_1")
+      dygraphOutput("dygraph_plot")
     )
   )
 )
@@ -58,7 +58,7 @@ server <- function(input, output) {
   })
   
   # Render function
-  output$dygraph_plot_1 <- renderDygraph({
+  output$dygraph_plot <- renderDygraph({
     # Silently leave the function in case there's no input file
     req(file_data()[[1]]$data)
     
@@ -124,7 +124,7 @@ server <- function(input, output) {
         replaceData(proxy, tableData$checkboxes)
       }
       
-      output$dygraph_plot_1 <- renderDygraph({
+      output$dygraph_plot <- renderDygraph({
         # Silently leave the function in case there's no input file
         req(input$files)
         

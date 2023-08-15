@@ -4,6 +4,7 @@ library(dygraphs)
 library(data.table)
 library(DT)
 library(tidyverse)
+# library(htmltools)
 
 # Load shared data and function from global.R
 source("global.R")
@@ -13,7 +14,8 @@ source("global.R")
 # https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
 
 # Front-end
-ui <- fluidPage(theme = shinytheme("lumen"),
+ui <- fluidPage(
+  theme = shinytheme("lumen"),
   titlePanel("Wavexpress"),
   sidebarLayout(
     sidebarPanel(
@@ -27,10 +29,7 @@ ui <- fluidPage(theme = shinytheme("lumen"),
     ),
     mainPanel(
       # Graph window
-      # dygraphOutput("dygraph_plot"),
-
-      # UI Test
-      uiOutput("moreControls")
+      uiOutput("dygraphPlot")
     )
   )
 )
@@ -40,7 +39,7 @@ server <- function(input, output) {
   proxy <- dataTableProxy('myTable')
   
   # UI Test
-  output$moreControls <- renderUI({
+  output$dygraphPlot <- renderUI({
     
     graphs <- purrr::map(file_data(), \(file) {
       # Silently leave the function in case there's no input file
@@ -59,10 +58,10 @@ server <- function(input, output) {
       # Plots the graph
       renderDygraph({
         dygraph(dplyr::select(file$data, all_of(cols_to_plot)), 
-              main = file$filename) %>% 
-        dyRangeSelector() %>%
-        dyAxis("x", label = "Time (s)") %>%
-        dyAxis("y", label = "Amplitude (mV)")
+                main = file$filename) %>% 
+          dyRangeSelector() %>%
+          dyAxis("x", label = "Time (s)") %>%
+          dyAxis("y", label = "Amplitude (mV)")
       })
     })
   })
@@ -70,46 +69,13 @@ server <- function(input, output) {
   # Combined reactive expression for file input, data, headers, and filename
   file_data <- reactive({
     req(input$files)
-    file_list <- apply(input$files, 1, function(read) {
+    apply(input$files, 1, function(read) {
       data <- read.delim2(read[["datapath"]])
       headers <- colnames(data)[-1]
       filename <- read[["name"]]
       list(data = data, headers = headers, filename = filename)
     })
-    # purrr::map(input$files, \(read) {
-    #   data <- read.delim2(read$datapath)
-    #   # data <- read.delim2(paste("./", read, sep=""))
-    #   headers <- colnames(data)[-1]
-    #   filename <- read$name
-    #   # filename <- input$files$name
-    #   list(data = data, headers = headers, filename = filename)
-    # })
-      
-    # headers <- purrr::map()colnames(data)[-1]
   })
-  
-  # Render function
-  # output$dygraph_plot <- renderDygraph({
-  #   # Silently leave the function in case there's no input file
-  #   req(file_data()[[1]]$data)
-  #   
-  #   # Limit length according to the number of attributes of the input file
-  #   length(v.marked) <<- length(file_data()[[1]]$headers)
-  #   
-  #   # Consider "Time" (always True) as the 1st element
-  #   new_v.marked <- c(TRUE, v.marked)
-  #   
-  #   # Get indices
-  #   cols_to_plot <- which(new_v.marked)
-  #   print(cols_to_plot)
-  #   
-  #   # Plots the graph
-  #   dygraph(dplyr::select(file_data()[[1]]$data, all_of(cols_to_plot)), 
-  #           main = file_data()[[1]]$filename) %>% 
-  #     dyRangeSelector() %>%
-  #     dyAxis("x", label = "Time (s)") %>%
-  #     dyAxis("y", label = "Amplitude (mV)")
-  # })
   
   
   # Sends the "checkbox" table to the output
@@ -123,9 +89,9 @@ server <- function(input, output) {
     
     # Set the column names
     colnames(checkboxes) <- file_data()[[1]]$headers
-
+    
     # Set the row name
-    rownames(checkboxes) <- file_data()[[1]]$filename
+    rownames(checkboxes) <- ""
     
     # The reactive version of the data
     tableData <- reactiveValues(checkboxes = checkboxes)
@@ -155,38 +121,41 @@ server <- function(input, output) {
         replaceData(proxy, tableData$checkboxes)
       }
       
-      output$dygraph_plot <- renderDygraph({
-        # Silently leave the function in case there's no input file
-        req(input$files)
+      output$dygraphPlot <- renderUI({
         
-        # Limit length according to number of attributes of the input file
-        length(v.marked) <<- length(file_data()[[1]]$headers)
-        
-        # Debugging
-        cat("v.marked:", v.marked, "\n")
-        
-        # Consider "Time" (always True) as the 1st element
-        new_v.marked <- c(TRUE, v.marked)
-        
-        # Get indices
-        cols_to_plot <- which(new_v.marked)
-        print(cols_to_plot)
-        
-        # Plots the graph
-        dygraph(dplyr::select(file_data()[[1]]$data, all_of(cols_to_plot)), 
-                main = file_data()[[1]]$filename) %>% 
-          dyRangeSelector() %>%
-          dyAxis("x", label = "Time (s)") %>%
-          dyAxis("y", label = "Amplitude (mV)")
+        graphs <- purrr::map(file_data(), \(file) {
+          # Silently leave the function in case there's no input file
+          req(file$data)
+          
+          # Limit length according to the number of attributes of the input file
+          length(v.marked) <<- length(file$headers)
+          
+          # Consider "Time" (always True) as the 1st element
+          new_v.marked <- c(TRUE, v.marked)
+          
+          # Get indices
+          cols_to_plot <- which(new_v.marked)
+          print(cols_to_plot)
+          
+          # Plots the graph
+          renderDygraph({
+            dygraph(dplyr::select(file$data, all_of(cols_to_plot)), 
+                    main = file$filename) %>% 
+              dyRangeSelector() %>%
+              dyAxis("x", label = "Time (s)") %>%
+              dyAxis("y", label = "Amplitude (mV)")
+          })
+        })
       })
       
     })
-  
+    
     # Finally calls the object
     checkboxes},
     
     # These are options to make the table look like checkboxes
     selection = list(mode = "single", target = 'cell'), 
+    rownames = FALSE,
     options = list(
       columnDefs = list(list(className = 'dt-center', targets = "_all")),
       dom = "t", ordering = F

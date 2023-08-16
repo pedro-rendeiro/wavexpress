@@ -26,9 +26,6 @@ ui <- fluidPage(theme = shinytheme("lumen"),
       dataTableOutput("myTable")
     ),
     mainPanel(
-      # Graph window
-      # dygraphOutput("dygraph_plot"),
-
       # UI Test
       uiOutput("moreControls")
     )
@@ -39,9 +36,8 @@ server <- function(input, output) {
   # Proxy to update the myTable
   proxy <- dataTableProxy('myTable')
   
-  # UI Test
+  # Render graphs after a new input
   output$moreControls <- renderUI({
-    
     graphs <- purrr::map(file_data(), \(file) {
       # Silently leave the function in case there's no input file
       req(file$data)
@@ -76,40 +72,7 @@ server <- function(input, output) {
       filename <- read[["name"]]
       list(data = data, headers = headers, filename = filename)
     })
-    # purrr::map(input$files, \(read) {
-    #   data <- read.delim2(read$datapath)
-    #   # data <- read.delim2(paste("./", read, sep=""))
-    #   headers <- colnames(data)[-1]
-    #   filename <- read$name
-    #   # filename <- input$files$name
-    #   list(data = data, headers = headers, filename = filename)
-    # })
-      
-    # headers <- purrr::map()colnames(data)[-1]
   })
-  
-  # Render function
-  # output$dygraph_plot <- renderDygraph({
-  #   # Silently leave the function in case there's no input file
-  #   req(file_data()[[1]]$data)
-  #   
-  #   # Limit length according to the number of attributes of the input file
-  #   length(v.marked) <<- length(file_data()[[1]]$headers)
-  #   
-  #   # Consider "Time" (always True) as the 1st element
-  #   new_v.marked <- c(TRUE, v.marked)
-  #   
-  #   # Get indices
-  #   cols_to_plot <- which(new_v.marked)
-  #   print(cols_to_plot)
-  #   
-  #   # Plots the graph
-  #   dygraph(dplyr::select(file_data()[[1]]$data, all_of(cols_to_plot)), 
-  #           main = file_data()[[1]]$filename) %>% 
-  #     dyRangeSelector() %>%
-  #     dyAxis("x", label = "Time (s)") %>%
-  #     dyAxis("y", label = "Amplitude (mV)")
-  # })
   
   
   # Sends the "checkbox" table to the output
@@ -155,29 +118,31 @@ server <- function(input, output) {
         replaceData(proxy, tableData$checkboxes)
       }
       
-      output$dygraph_plot <- renderDygraph({
-        # Silently leave the function in case there's no input file
-        req(input$files)
-        
-        # Limit length according to number of attributes of the input file
-        length(v.marked) <<- length(file_data()[[1]]$headers)
-        
-        # Debugging
-        cat("v.marked:", v.marked, "\n")
-        
-        # Consider "Time" (always True) as the 1st element
-        new_v.marked <- c(TRUE, v.marked)
-        
-        # Get indices
-        cols_to_plot <- which(new_v.marked)
-        print(cols_to_plot)
-        
-        # Plots the graph
-        dygraph(dplyr::select(file_data()[[1]]$data, all_of(cols_to_plot)), 
-                main = file_data()[[1]]$filename) %>% 
-          dyRangeSelector() %>%
-          dyAxis("x", label = "Time (s)") %>%
-          dyAxis("y", label = "Amplitude (mV)")
+      # Render graphs after a change on the table checkboxes
+      output$moreControls <- renderUI({
+        graphs <- purrr::map(file_data(), \(file) {
+          # Silently leave the function in case there's no input file
+          req(file$data)
+          
+          # Limit length according to the number of attributes of the input file
+          length(v.marked) <<- length(file$headers)
+          
+          # Consider "Time" (always True) as the 1st element
+          new_v.marked <- c(TRUE, v.marked)
+          
+          # Get indices
+          cols_to_plot <- which(new_v.marked)
+          print(cols_to_plot)
+          
+          # Plots the graph
+          renderDygraph({
+            dygraph(dplyr::select(file$data, all_of(cols_to_plot)), 
+                    main = file$filename) %>% 
+              dyRangeSelector() %>%
+              dyAxis("x", label = "Time (s)") %>%
+              dyAxis("y", label = "Amplitude (mV)")
+          })
+        })
       })
       
     })

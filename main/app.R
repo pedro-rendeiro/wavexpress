@@ -33,9 +33,6 @@ ui <- fluidPage(theme = shinytheme("lumen"),
 )
 
 server <- function(input, output) {
-  # Proxy to update the myTable
-  proxy <- dataTableProxy('myTable')
-  
   # Variable to save the state of the checkboxes
   v.marked <<- c(rep(T,10))
   
@@ -84,6 +81,10 @@ server <- function(input, output) {
       # Set the row name
       rownames(checkboxes) <- filename
       
+      # Create dataTable object
+      tableID <- paste("table_", filename, sep="")
+      DT::dataTableOutput(tableID)
+      
       # Create a list of file info
       list(data = data, headers = headers, filename = filename, checkboxes = checkboxes)
     })
@@ -94,6 +95,8 @@ server <- function(input, output) {
     # req(input$files)
     
     purrr::map(file_data(), \(file) {
+      # Proxy to update the myTable
+      proxy <- dataTableProxy(file$tableID)
       
       # The reactive version of the data
       tableData <- reactiveValues(checkboxes = file$checkboxes)
@@ -153,7 +156,9 @@ server <- function(input, output) {
         
       })
       
-      renderDataTable(
+      var_name <- paste("output", file$tableID, sep="$")
+      
+      get(var_name) <- renderDataTable(
         {file$checkboxes},
         # These are options to make the table look like checkboxes
         selection = list(mode = "single", target = 'cell'), 
@@ -163,6 +168,7 @@ server <- function(input, output) {
         ),
         escape = F
       )
+      
     })
   })
   

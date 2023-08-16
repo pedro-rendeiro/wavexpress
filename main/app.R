@@ -50,7 +50,7 @@ server <- function(input, output) {
       
       # Get indices
       cols_to_plot <- which(new_v.marked)
-      print(cols_to_plot)
+      # print(cols_to_plot)
       
       # Plots the graph
       renderDygraph({
@@ -106,7 +106,7 @@ server <- function(input, output) {
       v.marked[cell] <<- !v.marked[cell]
       
       # Debugging
-      print(v.marked)
+      cat("v.marked: ", v.marked, "\n")
       
       # If one of the cells has been selected
       if(cell) {
@@ -116,6 +116,9 @@ server <- function(input, output) {
         
         # Send proxy (no need to refresh whole table)
         replaceData(proxy, tableData$checkboxes)
+        # is.na(tableData$checkboxes[[2]]) (if TRUE, cell is unchecked)
+        # View(tableData$checkboxes)
+        # ?replaceData
       }
       
       # Render graphs after a change on the table checkboxes
@@ -132,7 +135,7 @@ server <- function(input, output) {
           
           # Get indices
           cols_to_plot <- which(new_v.marked)
-          print(cols_to_plot)
+          # print(cols_to_plot)
           
           # Plots the graph
           renderDygraph({
@@ -148,6 +151,7 @@ server <- function(input, output) {
     })
   
     # Finally calls the object
+    # View(checkboxes)
     checkboxes},
     
     # These are options to make the table look like checkboxes

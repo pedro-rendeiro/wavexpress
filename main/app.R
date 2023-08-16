@@ -43,7 +43,7 @@ server <- function(input, output) {
   output$dygraphPlot <- renderUI({
     purrr::map(file_data(), \(file) {
       # Silently leave the function in case there's no input file
-      req(file$data)
+      # req(file$data)
       
       # Limit length according to the number of attributes of the input file
       length(v.marked) <<- length(file$headers)
@@ -91,7 +91,7 @@ server <- function(input, output) {
   
   output$myTable <- renderUI({
     # Silently leave the function in case there's no input file
-    req(input$files)
+    # req(input$files)
     
     purrr::map(file_data(), \(file) {
       
@@ -128,7 +128,7 @@ server <- function(input, output) {
         output$dygraphPlot <- renderUI({
           purrr::map(file_data(), \(file) {
             # Silently leave the function in case there's no input file
-            req(file$data)
+            # req(file$data)
             
             # Limit length according to the number of attributes of the input file
             length(v.marked) <<- length(file$headers)

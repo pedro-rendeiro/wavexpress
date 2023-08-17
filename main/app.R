@@ -5,9 +5,6 @@ library(data.table)
 library(DT)
 library(tidyverse)
 
-# Load shared data and function from global.R
-source("global.R")
-
 # Good theme options: "lumem", "spacelab", "cerulean"...
 # There's an shiny app dedicated to test theme options,
 # https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
@@ -41,20 +38,10 @@ server <- function(input, output) {
     graphs <- purrr::map(file_data(), \(file) {
       # Silently leave the function in case there's no input file
       req(file$data)
-      
-      # Limit length according to the number of attributes of the input file
-      length(v.marked) <<- length(file$headers)
-      
-      # Consider "Time" (always True) as the 1st element
-      new_v.marked <- c(TRUE, v.marked)
-      
-      # Get indices
-      cols_to_plot <- which(new_v.marked)
-      # print(cols_to_plot)
-      
+
       # Plots the graph
       renderDygraph({
-        dygraph(dplyr::select(file$data, all_of(cols_to_plot)), 
+        dygraph(file$data, 
               main = file$filename) %>% 
         dyRangeSelector() %>%
         dyAxis("x", label = "Time (s)") %>%
@@ -99,22 +86,17 @@ server <- function(input, output) {
       
       # Variable to store selected cells
       cell <- input$myTable_cells_selected[2]
-      
-      # Invert logic value of the selected cell
-      v.marked[cell] <<- !v.marked[cell]
-      
-      # Debugging
-      cat("v.marked: ", v.marked, "\n")
-      
+
       tableData$checkboxes[input$myTable_cells_selected] =
         ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
                as.character(icon("ok", lib = "glyphicon")), NA)
 
       # Send proxy (no need to refresh whole table)
       replaceData(proxy, tableData$checkboxes)
-      # is.na(tableData$checkboxes[[2]]) (if TRUE, cell is unchecked)
-      # View(tableData$checkboxes)
-      # ?replaceData
+      
+      control_list <- purrr::map_lgl(as.character(tableData$checkboxes[1,]), \(var) {
+        ifelse(is.na(var), FALSE, TRUE)
+      })
       
       # Render graphs after a change on the table checkboxes
       output$moreControls <- renderUI({
@@ -122,15 +104,8 @@ server <- function(input, output) {
           # Silently leave the function in case there's no input file
           req(file$data)
           
-          # Limit length according to the number of attributes of the input file
-          length(v.marked) <<- length(file$headers)
-          
-          # Consider "Time" (always True) as the 1st element
-          new_v.marked <- c(TRUE, v.marked)
-          
           # Get indices
-          cols_to_plot <- which(new_v.marked)
-          # print(cols_to_plot)
+          cols_to_plot <- which(c(TRUE, control_list))
           
           # Plots the graph
           renderDygraph({
@@ -146,7 +121,6 @@ server <- function(input, output) {
     })
   
     # Finally calls the object
-    # View(checkboxes)
     checkboxes},
     
     # These are options to make the table look like checkboxes

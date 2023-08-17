@@ -34,23 +34,6 @@ server <- function(input, output) {
   # Proxy to update the myTable
   proxy <- dataTableProxy('myTable')
   
-  # Render graphs after a new input
-  output$moreControls <- renderUI({
-    graphs <- purrr::map(file_data(), \(file) {
-      # Silently leave the function in case there's no input file
-      req(file$data)
-
-      # Plots the graph
-      renderDygraph({
-        dygraph(file$data, 
-              main = file$filename) %>% 
-        dyRangeSelector() %>%
-        dyAxis("x", label = "Time (s)") %>%
-        dyAxis("y", label = "Amplitude (mV)")
-      })
-    })
-  })
-  
   # Combined reactive expression for file input, data, headers, and filename
   file_data <- reactive({
     req(input$files)
@@ -62,6 +45,19 @@ server <- function(input, output) {
     })
   })
   
+  # Render graphs after a new input
+  output$moreControls <- renderUI({
+    purrr::map(file_data(), \(file) {
+      # Plots the graph
+      renderDygraph({
+        dygraph(file$data, 
+              main = file$filename) %>% 
+        dyRangeSelector() %>%
+        dyAxis("x", label = "Time (s)") %>%
+        dyAxis("y", label = "Amplitude (mV)")
+      })
+    })
+  })
   
   # Sends the "checkbox" table to the output
   output$myTable <- renderDataTable({
@@ -83,8 +79,6 @@ server <- function(input, output) {
     
     # If a cell is selected, enter here
     observeEvent(req(input$myTable_cells_selected), {
-      req(input$files)
-      
       # Variable to store selected cells
       cell <- input$myTable_cells_selected[2]
 
@@ -101,10 +95,7 @@ server <- function(input, output) {
       
       # Render graphs after a change on the table checkboxes
       output$moreControls <- renderUI({
-        graphs <- purrr::map(file_data(), \(file) {
-          # Silently leave the function in case there's no input file
-          req(file$data)
-          
+        purrr::map(file_data(), \(file) {
           # Get indices
           cols_to_plot <- which(c(TRUE, control_list))
           

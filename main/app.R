@@ -3,7 +3,8 @@ library(shinythemes)
 library(dygraphs)
 library(data.table)
 library(DT)
-library(tidyverse)
+library(dplyr)
+library(purrr)
 
 # Good theme options: "lumem", "spacelab", "cerulean"...
 # There's an shiny app dedicated to test theme options,

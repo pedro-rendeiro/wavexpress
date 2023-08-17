@@ -21,18 +21,18 @@ ui <- fluidPage(theme = shinytheme("lumen"),
                 multiple = TRUE
       ),
       # Display table with checkboxes
-      dataTableOutput("myTable")
+      dataTableOutput("controlTable")
     ),
     mainPanel(
       # UI Test
-      uiOutput("moreControls")
+      uiOutput("dgPlots")
     )
   )
 )
 
 server <- function(input, output) {
-  # Proxy to update the myTable
-  proxy <- dataTableProxy('myTable')
+  # Proxy to update the controlTable
+  proxy <- dataTableProxy('controlTable')
   
   # Combined reactive expression for file input, data, headers, and filename
   file_data <- reactive({
@@ -46,7 +46,7 @@ server <- function(input, output) {
   })
   
   # Render graphs after a new input
-  output$moreControls <- renderUI({
+  output$dgPlots <- renderUI({
     purrr::map(file_data(), \(file) {
       # Plots the graph
       renderDygraph({
@@ -60,7 +60,7 @@ server <- function(input, output) {
   })
   
   # Sends the "checkbox" table to the output
-  output$myTable <- renderDataTable({
+  output$controlTable <- renderDataTable({
     # Silently leave the function in case there's no input file
     req(input$files)
     
@@ -78,12 +78,12 @@ server <- function(input, output) {
     tableData <- reactiveValues(checkboxes = checkboxes)
     
     # If a cell is selected, enter here
-    observeEvent(req(input$myTable_cells_selected), {
+    observeEvent(req(input$controlTable_cells_selected), {
       # Variable to store selected cells
-      cell <- input$myTable_cells_selected[2]
+      cell <- input$controlTable_cells_selected[2]
 
-      tableData$checkboxes[input$myTable_cells_selected] =
-        ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
+      tableData$checkboxes[input$controlTable_cells_selected] =
+        ifelse(is.na(tableData$checkboxes[input$controlTable_cells_selected]),
                as.character(icon("ok", lib = "glyphicon")), NA)
 
       # Send proxy (no need to refresh whole table)
@@ -94,7 +94,7 @@ server <- function(input, output) {
       })
       
       # Render graphs after a change on the table checkboxes
-      output$moreControls <- renderUI({
+      output$dgPlots <- renderUI({
         purrr::map(file_data(), \(file) {
           # Get indices
           cols_to_plot <- which(c(TRUE, control_list))

@@ -21,7 +21,8 @@ ui <- fluidPage(theme = shinytheme("lumen"),
                 multiple = TRUE
       ),
       # Display table with checkboxes
-      dataTableOutput("controlTable")
+      # dataTableOutput("controlTable")
+      uiOutput("controlTable")
     ),
     mainPanel(
       # UI Test
@@ -41,7 +42,12 @@ server <- function(input, output) {
       data <- read.delim2(read[["datapath"]])
       headers <- colnames(data)[-1]
       filename <- read[["name"]]
-      list(data = data, headers = headers, filename = filename)
+      checkboxes <- data.frame(matrix(as.character(icon("ok", lib = "glyphicon")), 
+                        ncol = length(headers), nrow = 1))
+      colnames(checkboxes) <- headers
+      rownames(checkboxes) <- filename
+      tabledata <- reactiveValues(checkboxes = checkboxes)
+      list(data = data, headers = headers, filename = filename, tabledata = tabledata)
     })
   })
   
@@ -64,32 +70,19 @@ server <- function(input, output) {
     # Silently leave the function in case there's no input file
     req(input$files)
     
-    # Create an empty dataframe with the specified column names and a single row of "OK" values
-    checkboxes <- data.frame(matrix(as.character(icon("ok", lib = "glyphicon")), 
-                                    ncol = length(file_data()[[1]]$headers), nrow = 1))
-    
-    # Set the column names
-    colnames(checkboxes) <- file_data()[[1]]$headers
-
-    # Set the row name
-    rownames(checkboxes) <- file_data()[[1]]$filename
-    
-    # The reactive version of the data
-    tableData <- reactiveValues(checkboxes = checkboxes)
-    
     # If a cell is selected, enter here
     observeEvent(req(input$controlTable_cells_selected), {
       # Variable to store selected cells
       cell <- input$controlTable_cells_selected[2]
 
-      tableData$checkboxes[input$controlTable_cells_selected] =
-        ifelse(is.na(tableData$checkboxes[input$controlTable_cells_selected]),
+      tabledata$checkboxes[input$controlTable_cells_selected] =
+        ifelse(is.na(tabledata$checkboxes[input$controlTable_cells_selected]),
                as.character(icon("ok", lib = "glyphicon")), NA)
 
       # Send proxy (no need to refresh whole table)
-      replaceData(proxy, tableData$checkboxes)
+      replaceData(proxy, tabledata$checkboxes)
       
-      control_list <- purrr::map_lgl(as.character(tableData$checkboxes[1,]), \(var) {
+      control_list <- purrr::map_lgl(as.character(tabledata$checkboxes[1,]), \(var) {
         ifelse(is.na(var), FALSE, TRUE)
       })
       

@@ -93,13 +93,11 @@ server <- function(input, output) {
     # The reactive version of the data
     tableData <- reactiveValues(checkboxes = checkboxes)
     
-    # Update the table when clicked
-    # (selected = clicked)
-    # (marked = "OK" sign)
+    # If a cell is selected, enter here
     observeEvent(req(input$myTable_cells_selected), {
       req(input$files)
       
-      # Varible to store selected cells
+      # Variable to store selected cells
       cell <- input$myTable_cells_selected[2]
       
       # Invert logic value of the selected cell
@@ -108,18 +106,15 @@ server <- function(input, output) {
       # Debugging
       cat("v.marked: ", v.marked, "\n")
       
-      # If one of the cells has been selected
-      if(cell) {
-        tableData$checkboxes[input$myTable_cells_selected] =
-          ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
-                 as.character(icon("ok", lib = "glyphicon")), NA)
-        
-        # Send proxy (no need to refresh whole table)
-        replaceData(proxy, tableData$checkboxes)
-        # is.na(tableData$checkboxes[[2]]) (if TRUE, cell is unchecked)
-        # View(tableData$checkboxes)
-        # ?replaceData
-      }
+      tableData$checkboxes[input$myTable_cells_selected] =
+        ifelse(is.na(tableData$checkboxes[input$myTable_cells_selected]),
+               as.character(icon("ok", lib = "glyphicon")), NA)
+
+      # Send proxy (no need to refresh whole table)
+      replaceData(proxy, tableData$checkboxes)
+      # is.na(tableData$checkboxes[[2]]) (if TRUE, cell is unchecked)
+      # View(tableData$checkboxes)
+      # ?replaceData
       
       # Render graphs after a change on the table checkboxes
       output$moreControls <- renderUI({
